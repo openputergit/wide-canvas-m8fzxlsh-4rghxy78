@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StayInsight - Retention Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .chart-container {
+            min-height: 300px;
+            position: relative;
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        #three-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .nav-item.active {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #2563eb;
+            border-left: 3px solid #2563eb;
+        }
+        .reward-badge {
+            position: relative;
+            overflow: hidden;
+        }
+        .reward-badge::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(59, 130, 246, 0.2);
+            transform: rotate(45deg);
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 0;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="three-container"></div>
+    
+    <div class="min-h-screen flex">
+        <!-- Sidebar Navigation -->
+        <aside class="hidden md:flex flex-col w-64 glass-effect shadow-lg">
+            <div class="p-5 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-blue-600">CustomerAI Pro</h1>
+                <p class="text-sm text-gray-600 mt-1">Retention Analytics</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="#" class="nav-item active flex items-center px-5 py-3 text-gray-700" data-page="dashboard">
+                            <i class="bi bi-speedometer2 mr-3"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700" data-page="profile">
+                            <i class="bi bi-person mr-3"></i>
+                            <span>My Profile</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700" data-page="bills">
+                            <i class="bi bi-receipt mr-3"></i>
+                            <span>Bills</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700" data-page="rewards">
+                            <i class="bi bi-trophy mr-3"></i>
+                            <span>Rewards</span>
+                            <span class="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-blue-600 bg-blue-100 rounded-full">3</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700" data-page="settings">
+                            <i class="bi bi-gear mr-3"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="p-5 border-t border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Profile" class="w-8 h-8 rounded-full">
+                    <div>
+                        <p class="text-sm font-medium">Vicky</p>
+                        <p class="text-xs text-gray-500">Premium Plan</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Navigation -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10">
+            <div class="grid grid-cols-5 h-16">
+                <a href="#" class="flex flex-col items-center justify-center text-blue-600" data-page="dashboard">
+                    <i class="bi bi-speedometer2 text-xl"></i>
+                    <span class="text-xs mt-1">Dashboard</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600" data-page="profile">
+                    <i class="bi bi-person text-xl"></i>
+                    <span class="text-xs mt-1">Profile</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600" data-page="bills">
+                    <i class="bi bi-receipt text-xl"></i>
+                    <span class="text-xs mt-1">Bills</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600 relative" data-page="rewards">
+                    <i class="bi bi-trophy text-xl"></i>
+                    <span class="text-xs mt-1">Rewards</span>
+                    <span class="absolute top-0 right-4 w-4 h-4 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center">3</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600" data-page="settings">
+                    <i class="bi bi-gear text-xl"></i>
+                    <span class="text-xs mt-1">Settings</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto pb-16 md:pb-0">
+            <!-- Top Navigation -->
+            <nav class="bg-white glass-effect shadow-sm md:hidden">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="flex justify-between h-16">
+                        <div class="flex items-center">
+                            <h1 class="text-xl font-bold text-blue-600">CustomerAI Pro</h1>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button id="refreshBtn" class="text-gray-600 hover:text-blue-600">
+                                <i class="bi bi-arrow-clockwise text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-content active">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Header Section -->
+                    <div class="md:flex md:items-center md:justify-between mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Customer Retention Dashboard</h1>
+                            <p class="text-gray-600">Analyze customer behavior and optimize retention</p>
+                        </div>
+                        <div class="mt-4 md:mt-0">
+                            <button id="refreshBtn" class="hidden md:inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                <i class="bi bi-arrow-clockwise mr-2"></i>
+                                Refresh Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customer Health Overview -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold">Customer Health Overview</h2>
+                            <div class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
+                                <i class="bi bi-arrow-up"></i> 12% from last month
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- Health Score -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                        <i class="bi bi-heart-pulse"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Health Score</p>
+                                        <h3 class="text-xl font-bold">87%</h3>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: 87%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Churn Risk -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-red-100 text-red-600 mr-3">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Churn Risk</p>
+                                        <h3 class="text-xl font-bold">13%</h3>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-red-600 h-2 rounded-full" style="width: 13%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Active Users -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Active Users</p>
+                                        <h3 class="text-xl font-bold">4,628</h3>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- On-time Payments -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mr-3">
+                                        <i class="bi bi-credit-card"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">On-time Payments</p>
+                                        <h3 class="text-xl font-bold">78%</h3>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-600 h-2 rounded-full" style="width: 78%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Section -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <h2 class="text-lg font-semibold mb-4">Customer Data Analysis</h2>
+                        <div class="space-y-4">
+                            <div class="flex flex-col md:flex-row md:items-center md:space-x-4">
+                                <input type="file" id="csvUpload" accept=".csv" class="hidden">
+                                <label for="csvUpload" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 cursor-pointer inline-flex items-center mb-2 md:mb-0">
+                                    <i class="bi bi-upload mr-2"></i>
+                                    Upload CSV Data
+                                </label>
+                                <span id="fileName" class="text-sm text-gray-600"></span>
+                            </div>
+                            <div id="uploadStatus" class="hidden">
+                                <div class="w-full h-2 bg-gray-200 rounded-full">
+                                    <div class="upload-progress w-0 h-2 bg-blue-600 rounded-full transition-all duration-300"></div>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <p><i class="bi bi-info-circle mr-1"></i> Upload your customer payment history to analyze retention patterns and get personalized insights.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reward Status -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <h2 class="text-lg font-semibold mb-4">Payment Rewards Program</h2>
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold">Gold Tier Status</h3>
+                                    <p class="text-sm text-white/80">Reward points: 2,450</p>
+                                    <div class="mt-4">
+                                        <button class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-md text-sm">
+                                            Redeem Rewards
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                                        <circle class="text-blue-300/30" stroke="currentColor" stroke-width="8" fill="transparent" r="45" cx="50" cy="50"/>
+                                        <circle class="progress-ring-circle text-white" stroke="currentColor" stroke-width="8" fill="transparent" r="45" cx="50" cy="50" stroke-dasharray="283" stroke-dashoffset="70"/>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <span class="text-2xl font-bold">75%</span>
+                                            <span class="block text-xs">To Platinum</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm reward-badge">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">On-Time Payment</h4>
+                                        <p class="text-sm text-gray-600">+50 points for each on-time payment</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow-sm reward-badge">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">3-Month Streak</h4>
+                                        <p class="text-sm text-gray-600">+200 bonus points for 3 consecutive months</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow-sm reward-badge">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mr-3">
+                                        <i class="bi bi-star"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Referral Bonus</h4>
+                                        <p class="text-sm text-gray-600">+500 points for each successful referral</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Results -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Retention Rate -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Retention Rate</h3>
+                            <div class="chart-container" id="retentionChart">
+                                <div class="shimmer w-full h-full rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- Churn Prediction -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Churn Risk Analysis</h3>
+                            <div class="chart-container" id="churnChart">
+                                <div class="shimmer w-full h-full rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Segments -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Customer Segments</h3>
+                            <div id="segments" class="space-y-4">
+                                <div class="shimmer h-8 w-full rounded"></div>
+                                <div class="shimmer h-8 w-full rounded"></div>
+                                <div class="shimmer h-8 w-full rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendations -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">AI Recommendations</h3>
+                            <div id="recommendations" class="space-y-4">
+                                <div class="shimmer h-20 w-full rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Behavior Prediction -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mt-8">
+                        <h3 class="text-lg font-semibold mb-4">Behavior Prediction & Personalized Offers</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-600 mr-3">
+                                        <i class="bi bi-lightbulb"></i>
+                                    </div>
+                                    <h4 class="font-medium">Predicted Next Action</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    Customer is likely to <span class="font-medium text-blue-600">renew subscription</span> in the next 30 days with 78% probability.
+                                </p>
+                                <div class="mt-3">
+                                    <a href="#" class="text-blue-600 text-sm hover:underline">View prediction basis</a>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                        <i class="bi bi-gift"></i>
+                                    </div>
+                                    <h4 class="font-medium">Personalized Offer</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    Offer a 15% discount on the annual plan to increase retention probability by 25%.
+                                </p>
+                                <div class="mt-3">
+                                    <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Apply Offer</button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                        <i class="bi bi-graph-up"></i>
+                                    </div>
+                                    <h4 class="font-medium">Engagement Suggestion</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    Send a personalized email highlighting unused premium features to increase engagement.
+                                </p>
+                                <div class="mt-3">
+                                    <a href="#" class="text-blue-600 text-sm hover:underline">Schedule email</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile-page" class="page-content">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Header Section -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">My Profile</h1>
+                        <p class="text-gray-600">Manage your personal information and preferences</p>
+                    </div>
+
+                    <!-- Profile Information -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="md:w-1/4 flex justify-center md:justify-start mb-6 md:mb-0">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=3&w=256&h=256&q=80" alt="Profile" class="w-40 h-40 rounded-full object-cover">
+                                    <label for="profile-upload" class="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 cursor-pointer shadow-md hover:bg-blue-700">
+                                        <i class="bi bi-camera"></i>
+                                        <input id="profile-upload" type="file" accept="image/*" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="md:w-3/4 md:pl-8">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                        <input type="text" value="Vicky" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" value="vicky67@gmail.com" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                        <input type="tel" value="+91 7338630139" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Subscription Plan</label>
+                                        <select class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option selected>Premium Plan</option>
+                                            <option>Standard Plan</option>
+                                            <option>Basic Plan</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Billing Address</label>
+                                        <textarea class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3">Bangalore, Karnataka
+India</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                                        <div class="flex items-center p-3 border border-gray-300 rounded-md">
+                                            <i class="bi bi-wallet2 text-gray-600 mr-3 text-xl"></i>
+                                            <div>
+                                                <p class="font-medium">PhonePe/Paytm UPI</p>
+                                                <p class="text-sm text-gray-500">Default payment method</p>
+                                            </div>
+                                            <button class="ml-auto text-blue-600 text-sm font-medium hover:underline">Change</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex justify-end">
+                                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Save Changes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Statistics -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <h2 class="text-lg font-semibold mb-4">Account Statistics</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
+                                    <h4 class="font-medium">Account Age</h4>
+                                </div>
+                                <p class="text-3xl font-bold text-gray-800">2.5 years</p>
+                                <p class="text-sm text-gray-600 mt-1">Member since July 15, 2021</p>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </div>
+                                    <h4 class="font-medium">Payment Consistency</h4>
+                                </div>
+                                <p class="text-3xl font-bold text-gray-800">92%</p>
+                                <p class="text-sm text-gray-600 mt-1">On-time payment rate</p>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mr-3">
+                                        <i class="bi bi-gem"></i>
+                                    </div>
+                                    <h4 class="font-medium">Loyalty Status</h4>
+                                </div>
+                                <p class="text-3xl font-bold text-gray-800">Gold</p>
+                                <p class="text-sm text-gray-600 mt-1">550 points to Platinum</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <h2 class="text-lg font-semibold mb-4">Notification Preferences</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                <div>
+                                    <h4 class="font-medium">Payment Reminders</h4>
+                                    <p class="text-sm text-gray-600">Get notified before your bill is due</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                <div>
+                                    <h4 class="font-medium">Reward Point Updates</h4>
+                                    <p class="text-sm text-gray-600">Get notified when you earn new reward points</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                <div>
+                                    <h4 class="font-medium">Special Offers</h4>
+                                    <p class="text-sm text-gray-600">Get notified about promotions and discounts</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                <div>
+                                    <h4 class="font-medium">Weekly Reports</h4>
+                                    <p class="text-sm text-gray-600">Receive weekly updates about your account</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bills Page -->
+            <div id="bills-page" class="page-content">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Header Section -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">Bills & Payments</h1>
+                        <p class="text-gray-600">Manage your bills and payment methods</p>
+                    </div>
+
+                    <!-- Bills Tabs -->
+                    <div class="mb-8">
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-8">
+                                <button class="bills-tab active whitespace-nowrap py-4 px-1 border-b-2 border-blue-600 font-medium text-blue-600" data-tab="upcoming">
+                                    Upcoming Bills
+                                </button>
+                                <button class="bills-tab whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="history">
+                                    Payment History
+                                </button>
+                                <button class="bills-tab whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="recharge">
+                                    Mobile Recharge
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Bills Content -->
+                    <div id="upcoming-bills" class="bills-content active">
+                        <!-- Next Payment -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Next Payment</h2>
+                            <div class="bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg p-6 text-white">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                                    <div>
+                                        <h3 class="text-xl font-bold">Premium Subscription</h3>
+                                        <p class="text-white/80 mt-1">Due on July 15, 2023</p>
+                                        <div class="mt-2 text-lg font-semibold">₹3,999</div>
+                                    </div>
+                                    <div class="mt-4 md:mt-0">
+                                        <div class="mb-2 text-center text-white/80">7 days remaining</div>
+                                        <div class="w-full md:w-64 bg-white/20 rounded-full h-3">
+                                            <div class="bg-white h-3 rounded-full" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 md:mt-0">
+                                        <button class="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50">
+                                            Pay Now
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Bills List -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Upcoming Bills</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="bi bi-trophy text-blue-600"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">Premium Subscription</div>
+                                                        <div class="text-sm text-gray-500">Monthly plan</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">July 15, 2023</div>
+                                                <div class="text-sm text-gray-500">7 days left</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium">₹3,999</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    Upcoming
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-800">Pay Now</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <i class="bi bi-cloud-check text-green-600"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">Cloud Storage</div>
+                                                        <div class="text-sm text-gray-500">500GB Plan</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">August 5, 2023</div>
+                                                <div class="text-sm text-gray-500">28 days left</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium">₹799</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    Upcoming
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-800">Schedule</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Payment Methods -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-lg font-semibold">Payment Methods</h2>
+                                <button class="text-sm text-blue-600 font-medium hover:underline">
+                                    <i class="bi bi-plus-circle mr-1"></i> Add New
+                                </button>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-600">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="bi bi-wallet2 text-2xl text-blue-600 mr-4"></i>
+                                            <div>
+                                                <h4 class="font-medium">PhonePe UPI</h4>
+                                                <p class="text-sm text-gray-500">vicky67@upi</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                Default
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="bi bi-wallet2 text-2xl text-gray-600 mr-4"></i>
+                                            <div>
+                                                <h4 class="font-medium">Paytm UPI</h4>
+                                                <p class="text-sm text-gray-500">vicky67@paytm</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <button class="text-sm text-blue-600 hover:underline">Make Default</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="bi bi-cash-stack text-2xl text-green-600 mr-4"></i>
+                                            <div>
+                                                <h4 class="font-medium">Net Banking</h4>
+                                                <p class="text-sm text-gray-500">HDFC Bank</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <button class="text-sm text-blue-600 hover:underline">Make Default</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment History Content -->
+                    <div id="history-bills" class="bills-content hidden">
+                        <!-- Payment Summary -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Payment Summary</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <h3 class="text-gray-500 text-sm">Total Spent (Last 12 months)</h3>
+                                    <p class="text-2xl font-bold mt-1">₹47,988</p>
+                                    <div class="flex items-center mt-2 text-sm">
+                                        <span class="text-green-600 flex items-center">
+                                            <i class="bi bi-arrow-up mr-1"></i> 12%
+                                        </span>
+                                        <span class="text-gray-500 ml-2">from previous period</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <h3 class="text-gray-500 text-sm">Average Monthly Payment</h3>
+                                    <p class="text-2xl font-bold mt-1">₹3,999</p>
+                                    <div class="mt-2 text-sm text-gray-500">
+                                        Based on your last 12 payments
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <h3 class="text-gray-500 text-sm">On-time Payment Rate</h3>
+                                    <p class="text-2xl font-bold mt-1">92%</p>
+                                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                        <div class="bg-green-600 h-2 rounded-full" style="width: 92%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment History List -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Payment History</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="bi bi-trophy text-blue-600"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">Premium Subscription</div>
+                                                        <div class="text-sm text-gray-500">Monthly plan</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">June 15, 2023</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium">₹3,999</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-800">
+                                                    <i class="bi bi-download mr-1"></i> PDF
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <i class="bi bi-cloud-check text-green-600"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">Cloud Storage</div>
+                                                        <div class="text-sm text-gray-500">500GB Plan</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">June 5, 2023</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium">₹799</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-800">
+                                                    <i class="bi bi-download mr-1"></i> PDF
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="bi bi-trophy text-blue-600"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">Premium Subscription</div>
+                                                        <div class="text-sm text-gray-500">Monthly plan</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">May 15, 2023</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium">₹3,999</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-800">
+                                                    <i class="bi bi-download mr-1"></i> PDF
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                                        <i class="bi bi-phone text-red-600"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">Mobile Recharge</div>
+                                                        <div class="text-sm text-gray-500">+91 7338630139</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">May 10, 2023</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium">₹1,499</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Paid
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button class="text-blue-600 hover:text-blue-800">
+                                                    <i class="bi bi-download mr-1"></i> PDF
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-6 flex justify-center">
+                                <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    Load More
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Payment Analytics -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h2 class="text-lg font-semibold mb-4">Payment Analytics</h2>
+                            <div class="chart-container" id="paymentChart">
+                                <canvas></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Recharge Content -->
+                    <div id="recharge-bills" class="bills-content hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Recharge Form -->
+                            <div class="glass-effect rounded-lg shadow-sm p-6">
+                                <h2 class="text-lg font-semibold mb-4">Mobile Recharge</h2>
+                                <div class="bg-white p-6 rounded-lg shadow-sm">
+                                    <form id="rechargeForm">
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                                            <div class="flex">
+                                                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                                                    +91
+                                                </span>
+                                                <input type="tel" class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value="7338630139">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Operator</label>
+                                            <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="">Select Operator</option>
+                                                <option value="jio" selected>Jio</option>
+                                                <option value="airtel">Airtel</option>
+                                                <option value="vi">Vi</option>
+                                                <option value="bsnl">BSNL</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Recharge Amount</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <button type="button" class="amount-btn py-2 border border-gray-300 rounded-md text-center text-gray-700 hover:bg-blue-50 hover:border-blue-300" data-amount="249">₹249</button>
+                                                <button type="button" class="amount-btn py-2 border border-gray-300 rounded-md text-center text-gray-700 hover:bg-blue-50 hover:border-blue-300" data-amount="499">₹499</button>
+                                                <button type="button" class="amount-btn py-2 border border-gray-300 rounded-md text-center text-gray-700 hover:bg-blue-50 hover:border-blue-300" data-amount="699">₹699</button>
+                                                <button type="button" class="amount-btn py-2 border border-gray-300 rounded-md text-center text-gray-700 hover:bg-blue-50 hover:border-blue-300" data-amount="999">₹999</button>
+                                                <button type="button" class="amount-btn py-2 border border-gray-300 rounded-md text-center text-gray-700 hover:bg-blue-50 hover:border-blue-300 bg-blue-50 border-blue-300 text-blue-600" data-amount="1499">₹1,499</button>
+                                                <div class="relative">
+                                                    <input type="text" class="w-full h-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 pl-6" placeholder="Custom">
+                                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <span class="text-gray-500">₹</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                                            <div class="space-y-2">
+                                                <div class="flex items-center p-3 border border-gray-300 rounded-md">
+                                                    <input type="radio" name="payment" id="reward-points" class="form-radio h-4 w-4 text-blue-600" checked>
+                                                    <label for="reward-points" class="ml-3">
+                                                        <span class="font-medium text-gray-900">Use Reward Points</span>
+                                                        <p class="text-sm text-gray-500">Balance: 2,450 points (₹2,450 value)</p>
+                                                    </label>
+                                                </div>
+                                                <div class="flex items-center p-3 border border-gray-300 rounded-md">
+                                                    <input type="radio" name="payment" id="phonepe-payment" class="form-radio h-4 w-4 text-blue-600">
+                                                    <label for="phonepe-payment" class="ml-3">
+                                                        <span class="font-medium text-gray-900">PhonePe UPI</span>
+                                                        <p class="text-sm text-gray-500">vicky67@upi</p>
+                                                    </label>
+                                                </div>
+                                                <div class="flex items-center p-3 border border-gray-300 rounded-md">
+                                                    <input type="radio" name="payment" id="paytm-payment" class="form-radio h-4 w-4 text-blue-600">
+                                                    <label for="paytm-payment" class="ml-3">
+                                                        <span class="font-medium text-gray-900">Paytm UPI</span>
+                                                        <p class="text-sm text-gray-500">vicky67@paytm</p>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="rechargeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                                            Recharge Now
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Recharge History -->
+                            <div class="glass-effect rounded-lg shadow-sm p-6">
+                                <h2 class="text-lg font-semibold mb-4">Recharge History</h2>
+                                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                                <i class="bi bi-phone text-red-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="font-medium">+91 7338630139</p>
+                                                <div class="text-sm text-gray-500">May 10, 2023</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-medium">₹1,499</div>
+                                            <div class="text-sm text-gray-500">Rewards: -1,499 pts</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                                <i class="bi bi-phone text-red-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="font-medium">+91 9876543210</p>
+                                                <div class="text-sm text-gray-500">April 22, 2023</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-medium">₹499</div>
+                                            <div class="text-sm text-gray-500">PhonePe UPI</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                                <i class="bi bi-phone text-red-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="font-medium">+91 7338630139</p>
+                                                <div class="text-sm text-gray-500">March 15, 2023</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-medium">₹999</div>
+                                            <div class="text-sm text-gray-500">Rewards: -999 pts</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-center mt-6">
+                                    <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        View All Recharges
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-8 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                    <h3 class="font-medium text-blue-800 mb-2 flex items-center">
+                                        <i class="bi bi-lightbulb mr-2"></i> Did you know?
+                                    </h3>
+                                    <p class="text-sm text-blue-800">
+                                        You can earn double rewards points on mobile recharges done on weekends! Recharge on Saturday or Sunday to maximize your rewards.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rewards Page -->
+            <div id="rewards-page" class="page-content">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Header Section -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">My Rewards</h1>
+                        <p class="text-gray-600">Manage and redeem your loyalty rewards</p>
+                    </div>
+
+                    <!-- Reward Status -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <h3 class="text-xl font-bold">Gold Tier Status</h3>
+                                    <p class="text-white/80 mt-1">Member since July 15, 2021</p>
+                                    <div class="flex items-center mt-4">
+                                        <div class="text-3xl font-bold">2,450</div>
+                                        <div class="ml-2 text-white/80">points available</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 md:mt-0 relative">
+                                    <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                                        <circle class="text-blue-300/30" stroke="currentColor" stroke-width="8" fill="transparent" r="45" cx="50" cy="50"/>
+                                        <circle class="progress-ring-circle text-white" stroke="currentColor" stroke-width="8" fill="transparent" r="45" cx="50" cy="50" stroke-dasharray="283" stroke-dashoffset="70"/>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <span class="text-2xl font-bold">75%</span>
+                                            <span class="block text-xs">To Platinum</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-6 border-t border-white/20 grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <div class="text-2xl font-bold">550</div>
+                                    <div class="text-xs text-white/80">points to next tier</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold">12</div>
+                                    <div class="text-xs text-white/80">consecutive payments</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold">2</div>
+                                    <div class="text-xs text-white/80">successful referrals</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available Rewards -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <h2 class="text-lg font-semibold mb-4">Available Rewards</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <div class="h-3 bg-blue-600"></div>
+                                <div class="p-4">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                            <i class="bi bi-cash-coin"></i>
+                                        </div>
+                                        <h3 class="font-semibold">₹1,000 Bill Credit</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Get ₹1,000 off your next bill payment</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">1,000 points</span>
+                                        <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Redeem</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <div class="h-3 bg-purple-600"></div>
+                                <div class="p-4">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mr-3">
+                                            <i class="bi bi-phone"></i>
+                                        </div>
+                                        <h3 class="font-semibold">Mobile Recharge</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">₹999 mobile recharge to any number</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">999 points</span>
+                                        <button class="bg-purple-600 text-white px-3 py-1 rounded text-sm">Redeem</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <div class="h-3 bg-green-600"></div>
+                                <div class="p-4">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                            <i class="bi bi-gift"></i>
+                                        </div>
+                                        <h3 class="font-semibold">Premium Features</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">1 month of premium features for free</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">3,000 points</span>
+                                        <button class="bg-green-600 text-white px-3 py-1 rounded text-sm">Redeem</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <div class="h-3 bg-yellow-500"></div>
+                                <div class="p-4">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-600 mr-3">
+                                            <i class="bi bi-lightning-charge"></i>
+                                        </div>
+                                        <h3 class="font-semibold">Priority Support</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">3 months of priority customer support</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">1,500 points</span>
+                                        <button class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Redeem</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <div class="h-3 bg-red-600"></div>
+                                <div class="p-4">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-red-100 text-red-600 mr-3">
+                                            <i class="bi bi-shop"></i>
+                                        </div>
+                                        <h3 class="font-semibold">₹2,000 Gift Card</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">₹2,000 gift card to your favorite store</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">2,000 points</span>
+                                        <button class="bg-red-600 text-white px-3 py-1 rounded text-sm">Redeem</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <div class="h-3 bg-gray-600"></div>
+                                <div class="p-4">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 text-gray-600 mr-3">
+                                            <i class="bi bi-shield-check"></i>
+                                        </div>
+                                        <h3 class="font-semibold">Data Protection</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">1 year of enhanced data protection</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">5,000 points</span>
+                                        <button class="bg-gray-600 text-white px-3 py-1 rounded text-sm">Redeem</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Points History -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                        <h2 class="text-lg font-semibold mb-4">Points History</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                    <i class="bi bi-credit-card text-blue-600"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">On-time Payment</div>
+                                                    <div class="text-xs text-gray-500">Premium Subscription</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">June 15, 2023</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-green-600">+50</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <div class="text-sm font-medium">2,450</div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                                    <i class="bi bi-phone text-purple-600"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">Mobile Recharge Redemption</div>
+                                                    <div class="text-xs text-gray-500">+91 7338630139</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">May 10, 2023</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-red-600">-1,499</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <div class="text-sm font-medium">2,400</div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                    <i class="bi bi-calendar-check text-blue-600"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">3-Month Payment Streak</div>
+                                                    <div class="text-xs text-gray-500">Bonus Reward</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">May 15, 2023</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-green-600">+200</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <div class="text-sm font-medium">3,899</div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                    <i class="bi bi-people text-green-600"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">Referral Bonus</div>
+                                                    <div class="text-xs text-gray-500">Ramesh Kumar</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">April 28, 2023</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-green-600">+500</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <div class="text-sm font-medium">3,699</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 flex justify-center">
+                            <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                View Complete History
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Referral Program -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6">
+                        <h2 class="text-lg font-semibold mb-4">Referral Program</h2>
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+                            <div class="flex flex-col md:flex-row md:items-center">
+                                <div class="md:w-2/3 mb-6 md:mb-0">
+                                    <h3 class="text-xl font-bold text-blue-800 mb-2">Invite Friends & Earn 500 Points</h3>
+                                    <p class="text-blue-700 mb-4">
+                                        For each friend who signs up using your referral link and makes their first payment, you'll receive 500 bonus points.
+                                    </p>
+                                    <div class="flex items-center bg-white p-3 rounded-md border border-blue-200">
+                                        <input type="text" value="https://customerai.pro/r/vicky67" readonly class="flex-1 border-0 focus:outline-none bg-transparent text-blue-800 text-sm">
+                                        <button class="ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="bi bi-clipboard text-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="md:w-1/3 md:pl-8">
+                                    <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                                        <div class="text-3xl font-bold text-blue-600 mb-1">2</div>
+                                        <p class="text-sm text-gray-700 mb-3">Successful Referrals</p>
+                                        <div class="text-xl font-bold text-blue-600 mb-1">1,000</div>
+                                        <p class="text-sm text-gray-700">Points Earned</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex flex-wrap gap-2">
+                                <button class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    <i class="bi bi-envelope mr-2"></i>
+                                    Email
+                                </button>
+                                <button class="flex items-center px-4 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900">
+                                    <i class="bi bi-facebook mr-2"></i>
+                                    Facebook
+                                </button>
+                                <button class="flex items-center px-4 py-2 bg-blue-400 text-white rounded-md hover:bg-blue-500">
+                                    <i class="bi bi-twitter mr-2"></i>
+                                    Twitter
+                                </button>
+                                <button class="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                    <i class="bi bi-whatsapp mr-2"></i>
+                                    WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="page-content">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Header Section -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+                        <p class="text-gray-600">Manage your account preferences and settings</p>
+                    </div>
+
+                    <!-- Settings Tabs -->
+                    <div class="mb-8">
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-8">
+                                <button class="settings-tab active whitespace-nowrap py-4 px-1 border-b-2 border-blue-600 font-medium text-blue-600" data-tab="account">
+                                    Account Settings
+                                </button>
+                                <button class="settings-tab whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="notifications">
+                                    Notifications
+                                </button>
+                                <button class="settings-tab whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="privacy">
+                                    Privacy & Security
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- Account Settings Content -->
+                    <div id="account-settings" class="settings-content active">
+                        <!-- Personal Information -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Personal Information</h2>
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                        <input type="text" value="Vicky" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                        <input type="text" value="" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" value="vicky67@gmail.com" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                        <input type="tel" value="+91 7338630139" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                    <textarea class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3">Bangalore, Karnataka
+India</textarea>
+                                </div>
+                                
+                                <div class="pt-5">
+                                    <div class="flex justify-end">
+                                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">
+                                            Cancel
+                                        </button>
+                                        <button class="px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subscription Management -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Subscription Management</h2>
+                            <div class="bg-blue-50 p-5 rounded-lg border border-blue-200 mb-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-900">Premium Plan</h3>
+                                        <p class="text-blue-700 mt-1">₹3,999 per month</p>
+                                        <ul class="mt-3 space-y-1 text-sm text-blue-800">
+                                            <li class="flex items-center"><i class="bi bi-check-circle mr-2"></i> Unlimited data analysis</li>
+                                            <li class="flex items-center"><i class="bi bi-check-circle mr-2"></i> AI-powered recommendations</li>
+                                            <li class="flex items-center"><i class="bi bi-check-circle mr-2"></i> Priority customer support</li>
+                                            <li class="flex items-center"><i class="bi bi-check-circle mr-2"></i> Enhanced rewards program</li>
+                                        </ul>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-sm text-blue-700 mb-2">Renews on</div>
+                                        <div class="font-semibold">July 15, 2023</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h3 class="font-medium text-gray-900 mb-3">Available Plans</h3>
+                            <div class="space-y-4">
+                                <div class="border border-gray-200 rounded-lg p-5 bg-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-gray-900">Standard Plan</h4>
+                                            <p class="text-gray-600 mt-1">₹1,999 per month</p>
+                                            <p class="text-sm text-gray-500 mt-2">Basic analytics and recommendations</p>
+                                        </div>
+                                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            Downgrade
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-200 rounded-lg p-5 bg-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-gray-900">Enterprise Plan</h4>
+                                            <p class="text-gray-600 mt-1">₹7,999 per month</p>
+                                            <p class="text-sm text-gray-500 mt-2">Advanced features for large organizations</p>
+                                        </div>
+                                        <button class="px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                                            Upgrade
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                                <div class="text-sm text-gray-500">
+                                    <p>You can change your plan at any time. Changes will take effect at the end of your current billing cycle.</p>
+                                </div>
+                                <button class="mt-4 md:mt-0 text-sm text-red-600 hover:text-red-800">
+                                    Cancel Subscription
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Billing Information -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h2 class="text-lg font-semibold mb-4">Billing Information</h2>
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-base font-medium text-gray-900 mb-3">Payment Methods</h3>
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white">
+                                            <div class="flex items-center">
+                                                <i class="bi bi-wallet2 text-2xl text-blue-600 mr-4"></i>
+                                                <div>
+                                                    <h4 class="font-medium">PhonePe UPI</h4>
+                                                    <p class="text-sm text-gray-500">vicky67@upi</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <button class="text-sm text-blue-600 hover:text-blue-800">Edit</button>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    Default
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button class="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                            <i class="bi bi-plus-circle mr-2"></i> Add Payment Method
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-base font-medium text-gray-900 mb-3">Billing Address</h3>
+                                    <div class="p-4 border border-gray-200 rounded-lg bg-white">
+                                        <p>Vicky<br>
+                                        Bangalore, Karnataka<br>
+                                        India</p>
+                                        <button class="mt-4 text-sm text-blue-600 hover:text-blue-800">Edit Address</button>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-base font-medium text-gray-900 mb-3">Billing History</h3>
+                                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">June 15, 2023</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Premium Plan - Monthly</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹3,999</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                            Paid
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button class="text-blue-600 hover:text-blue-800">
+                                                            <i class="bi bi-download mr-1"></i> PDF
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">May 15, 2023</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Premium Plan - Monthly</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹3,999</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                            Paid
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button class="text-blue-600 hover:text-blue-800">
+                                                            <i class="bi bi-download mr-1"></i> PDF
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-4 flex justify-center">
+                                        <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            View All Invoices
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Settings Content -->
+                    <div id="notifications-settings" class="settings-content hidden">
+                        <!-- Email Notifications -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Email Notifications</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Payment Reminders</h4>
+                                        <p class="text-sm text-gray-600">Receive email reminders before your payment is due</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Account Updates</h4>
+                                        <p class="text-sm text-gray-600">Receive emails about account changes and updates</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Reward Alerts</h4>
+                                        <p class="text-sm text-gray-600">Receive emails when you earn or redeem rewards</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Promotional Emails</h4>
+                                        <p class="text-sm text-gray-600">Receive emails about special offers and promotions</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Notifications -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Mobile Notifications</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Push Notifications</h4>
+                                        <p class="text-sm text-gray-600">Allow push notifications on your mobile device</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Payment Alerts</h4>
+                                        <p class="text-sm text-gray-600">Receive notifications about payment activity</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Reward Notifications</h4>
+                                        <p class="text-sm text-gray-600">Receive notifications about reward activity</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Frequency -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h2 class="text-lg font-semibold mb-4">Notification Frequency</h2>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Payment Reminder Timing</label>
+                                    <select class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>3 days before due date</option>
+                                        <option>5 days before due date</option>
+                                        <option>1 week before due date</option>
+                                        <option>2 weeks before due date</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Summary Report Frequency</label>
+                                    <select class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>Weekly</option>
+                                        <option>Bi-weekly</option>
+                                        <option>Monthly</option>
+                                        <option>Never</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Quiet Hours</label>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 mb-1">Start Time</label>
+                                            <input type="time" value="22:00" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 mb-1">End Time</label>
+                                            <input type="time" value="08:00" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-5">
+                                    <div class="flex justify-end">
+                                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">
+                                            Cancel
+                                        </button>
+                                        <button class="px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Privacy & Security Content -->
+                    <div id="privacy-settings" class="settings-content hidden">
+                        <!-- Password Management -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Password Management</h2>
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                                        <input type="password" placeholder="••••••••" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                                        <input type="password" placeholder="••••••••" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                                        <input type="password" placeholder="••••••••" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-5">
+                                    <div class="flex justify-end">
+                                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">
+                                            Cancel
+                                        </button>
+                                        <button class="px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                                            Update Password
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Two-Factor Authentication -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Two-Factor Authentication</h2>
+                            <div class="p-4 bg-white rounded-lg shadow-sm mb-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="font-medium">Two-Factor Authentication</h3>
+                                        <p class="text-sm text-gray-500 mt-1">Add an extra layer of security to your account</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-center">
+                                <button class="px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                                    Set Up Two-Factor Authentication
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Privacy Settings -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                            <h2 class="text-lg font-semibold mb-4">Privacy Settings</h2>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Data Collection</h4>
+                                        <p class="text-sm text-gray-600">Allow us to collect usage data to improve our services</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Personalized Recommendations</h4>
+                                        <p class="text-sm text-gray-600">Allow us to use your data for personalized recommendations</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                                    <div>
+                                        <h4 class="font-medium">Third-Party Sharing</h4>
+                                        <p class="text-sm text-gray-600">Allow us to share your data with trusted partners</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Download My Data
+                                </button>
+                                <button class="ml-6 text-red-600 hover:text-red-800 text-sm font-medium">
+                                    Delete My Account
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Device Management -->
+                        <div class="glass-effect rounded-lg shadow-sm p-6">
+                            <h2 class="text-lg font-semibold mb-4">Device Management</h2>
+                            <div class="space-y-4">
+                                <div class="p-4 bg-white rounded-lg shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <i class="bi bi-laptop text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="font-medium">Dell Laptop</h4>
+                                                <p class="text-xs text-gray-500">Last active: Just now • Bangalore, IN</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 mr-3">
+                                                Current
+                                            </span>
+                                            <button disabled class="text-gray-400 cursor-not-allowed">
+                                                Sign Out
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-4 bg-white rounded-lg shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <i class="bi bi-phone text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="font-medium">Redmi Note 11</h4>
+                                                <p class="text-xs text-gray-500">Last active: 2 hours ago • Bangalore, IN</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <button class="text-red-600 hover:text-red-800 text-sm">
+                                                Sign Out
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-4 bg-white rounded-lg shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <i class="bi bi-tablet text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="font-medium">iPad Mini</h4>
+                                                <p class="text-xs text-gray-500">Last active: 3 days ago • Bangalore, IN</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <button class="text-red-600 hover:text-red-800 text-sm">
+                                                Sign Out
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-end">
+                                <button class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">
+                                    Sign Out All Devices
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Three.js background
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Three.js scene
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f9fa, 1);
+            document.getElementById('three-container').appendChild(renderer.domElement);
+
+            // Create particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const count = 500;
+            
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+            
+            for (let i = 0; i < count * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 20;
+                positions[i + 1] = (Math.random() - 0.5) * 20;
+                positions[i + 2] = (Math.random() - 0.5) * 20;
+                
+                // Blue/purple gradient colors
+                colors[i] = Math.random() * 0.2 + 0.1;     // R
+                colors[i + 1] = Math.random() * 0.2 + 0.3; // G
+                colors[i + 2] = Math.random() * 0.2 + 0.7; // B
+            }
+            
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.05,
+                sizeAttenuation: true,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.5,
+            });
+            
+            const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particles);
+            
+            camera.position.z = 5;
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                particles.rotation.x += 0.0005;
+                particles.rotation.y += 0.0005;
+                
+                renderer.render(scene, camera);
+            }
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            animate();
+
+            // Navigation functionality
+            const navItems = document.querySelectorAll('[data-page]');
+            const pages = document.querySelectorAll('.page-content');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.dataset.page;
+                    
+                    // Update navigation active state
+                    navItems.forEach(navItem => {
+                        navItem.classList.remove('active');
+                        if (navItem.classList.contains('nav-item')) {
+                            navItem.classList.remove('text-blue-600');
+                            navItem.classList.add('text-gray-700');
+                        } else {
+                            navItem.classList.remove('text-blue-600');
+                            navItem.classList.add('text-gray-600');
+                        }
+                    });
+                    
+                    // Set this item as active
+                    this.classList.add('active');
+                    if (this.classList.contains('nav-item')) {
+                        this.classList.remove('text-gray-700');
+                        this.classList.add('text-blue-600');
+                    } else {
+                        this.classList.remove('text-gray-600');
+                        this.classList.add('text-blue-600');
+                    }
+                    
+                    // Show the target page
+                    pages.forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    
+                    document.getElementById(`${target}-page`).classList.add('active', 'fade-in');
+                });
+            });
+
+            // Bills page tabs
+            const billsTabs = document.querySelectorAll('.bills-tab');
+            const billsContents = document.querySelectorAll('.bills-content');
+            
+            billsTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const target = this.dataset.tab;
+                    
+                    // Update tabs active state
+                    billsTabs.forEach(t => {
+                        t.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                    this.classList.add('active', 'border-blue-600', 'text-blue-600');
+                    
+                    // Show the target content
+                    billsContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    document.getElementById(`${target}-bills`).classList.remove('hidden');
+                });
+            });
+
+            // Settings page tabs
+            const settingsTabs = document.querySelectorAll('.settings-tab');
+            const settingsContents = document.querySelectorAll('.settings-content');
+            
+            settingsTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const target = this.dataset.tab;
+                    
+                    // Update tabs active state
+                    settingsTabs.forEach(t => {
+                        t.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                    this.classList.add('active', 'border-blue-600', 'text-blue-600');
+                    
+                    // Show the target content
+                    settingsContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    document.getElementById(`${target}-settings`).classList.remove('hidden');
+                });
+            });
+
+            // Mobile recharge amount selection
+            const amountBtns = document.querySelectorAll('.amount-btn');
+            amountBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    amountBtns.forEach(b => {
+                        b.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-600');
+                        b.classList.add('text-gray-700', 'border-gray-300');
+                    });
+                    
+                    this.classList.remove('text-gray-700', 'border-gray-300');
+                    this.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-600');
+                });
+            });
+
+            // Recharge button functionality
+            const rechargeBtn = document.getElementById('rechargeBtn');
+            if (rechargeBtn) {
+                rechargeBtn.addEventListener('click', function() {
+                    this.disabled = true;
+                    this.innerHTML = '<i class="bi bi-arrow-clockwise animate-spin mr-2"></i> Processing...';
+                    
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="bi bi-check-circle mr-2"></i> Recharge Successful!';
+                        this.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        this.classList.add('bg-green-600', 'hover:bg-green-700');
+                        
+                        // Show success message
+                        alert('Mobile recharge successful! Your transaction has been processed.');
+                        
+                        // Reset form after 3 seconds
+                        setTimeout(() => {
+                            this.disabled = false;
+                            this.innerHTML = 'Recharge Now';
+                            this.classList.remove('bg-green-600', 'hover:bg-green-700');
+                            this.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                            
+                            // Add latest recharge to history
+                            const now = new Date();
+                            const formattedDate = `${now.toLocaleString('default', { month: 'short' })} ${now.getDate()}, ${now.getFullYear()}`;
+                            
+                            const rechargeHistoryContainer = document.querySelector('.recharge-history');
+                            const newRecharge = document.createElement('div');
+                            newRecharge.className = 'bg-white p-4 rounded-lg shadow-sm mb-4';
+                            newRecharge.innerHTML = `
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                            <i class="bi bi-phone text-red-600"></i>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="font-medium">+91 7338630139</p>
+                                            <div class="text-sm text-gray-500">${formattedDate}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-medium">₹1,499</div>
+                                        <div class="text-sm text-gray-500">Rewards: -1,499 pts</div>
+                                    </div>
+                                </div>
+                            `;
+                        }, 3000);
+                    }, 2000);
+                });
+            }
+
+            // File upload handling
+            const csvUpload = document.getElementById('csvUpload');
+            const fileName = document.getElementById('fileName');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.querySelector('.upload-progress');
+
+            if (csvUpload) {
+                csvUpload.addEventListener('change', async function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    fileName.textContent = file.name;
+                    uploadStatus.classList.remove('hidden');
+                    uploadProgress.style.width = '0%';
+
+                    // Simulate file upload and processing
+                    await simulateUpload();
+
+                    // Process the data
+                    await processCustomerData();
+                });
+            }
+
+            async function simulateUpload() {
+                return new Promise(resolve => {
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+                        uploadProgress.style.width = `${progress}%`;
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            setTimeout(resolve, 500);
+                        }
+                    }, 200);
+                });
+            }
+
+            async function processCustomerData() {
+                // Simulate AI analysis with loading state
+                document.getElementById('retentionChart').innerHTML = '<div class="shimmer w-full h-full rounded"></div>';
+                document.getElementById('churnChart').innerHTML = '<div class="shimmer w-full h-full rounded"></div>';
+                document.getElementById('segments').innerHTML = `
+                    <div class="shimmer h-8 w-full rounded"></div>
+                    <div class="shimmer h-8 w-full rounded"></div>
+                    <div class="shimmer h-8 w-full rounded"></div>
+                `;
+                document.getElementById('recommendations').innerHTML = '<div class="shimmer h-20 w-full rounded"></div>';
+
+                try {
+                    // Simulate API call with a timeout
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    updateDashboard();
+                    updatePaymentChart();
+                } catch (error) {
+                    console.error("Error processing data:", error);
+                    // Show error message to user
+                    alert("There was an error processing your data. Please try again.");
+                }
+            }
+
+            function updateDashboard() {
+                // Create retention chart
+                const retentionChart = document.getElementById('retentionChart');
+                retentionChart.innerHTML = '<canvas></canvas>';
+                const retentionCanvas = retentionChart.querySelector('canvas');
+                
+                new Chart(retentionCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Retention Rate (%)',
+                            data: [82, 79, 85, 87, 89, 92],
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 70,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+                
+                // Create churn prediction chart
+                const churnChart = document.getElementById('churnChart');
+                churnChart.innerHTML = '<canvas></canvas>';
+                const churnCanvas = churnChart.querySelector('canvas');
+                
+                new Chart(churnCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                        datasets: [{
+                            data: [77, 15, 8],
+                            backgroundColor: [
+                                'rgba(34, 197, 94, 0.8)',
+                                'rgba(234, 179, 8, 0.8)',
+                                'rgba(239, 68, 68, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(234, 179, 8, 1)',
+                                'rgba(239, 68, 68, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+
+                // Update segments
+                const segments = document.getElementById('segments');
+                segments.innerHTML = `
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-blue-600 mr-2"></div>
+                            <span class="font-medium">High-Value Loyal</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-600 font-medium mr-2">32%</span>
+                            <div class="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">5,217 users</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                            <span class="font-medium">At Risk</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-yellow-600 font-medium mr-2">15%</span>
+                            <div class="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">2,446 users</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-red-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-red-600 mr-2"></div>
+                            <span class="font-medium">Churning</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-red-600 font-medium mr-2">8%</span>
+                            <div class="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full">1,305 users</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-green-600 mr-2"></div>
+                            <span class="font-medium">Consistent Payers</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-green-600 font-medium mr-2">45%</span>
+                            <div class="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">7,339 users</div>
+                        </div>
+                    </div>
+                `;
+
+                // Update recommendations
+                const recommendations = document.getElementById('recommendations');
+                recommendations.innerHTML = `
+                    <div class="p-4 bg-blue-50 rounded">
+                        <h4 class="font-medium mb-2 flex items-center">
+                            <i class="bi bi-lightning-charge mr-2 text-blue-600"></i>
+                            Priority Actions:
+                        </h4>
+                        <ul class="list-disc list-inside text-sm space-y-2 ml-2">
+                            <li>Implement tiered loyalty program for high-value customers with payment streak bonuses</li>
+                            <li>Send payment reminders 3 days before due dates to at-risk customers</li>
+                            <li>Offer flexible payment options to the churning segment</li>
+                            <li>Reward consistent payers with early access to new features</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-purple-50 rounded mt-3">
+                        <h4 class="font-medium mb-2 flex items-center">
+                            <i class="bi bi-award mr-2 text-purple-600"></i>
+                            Reward Program Optimization:
+                        </h4>
+                        <p class="text-sm ml-2">
+                            Based on machine learning analysis, increasing rewards for 3-month payment streaks by 15% could reduce churn by approximately 23% in the at-risk segment.
+                        </p>
+                    </div>
+                `;
+            }
+            
+            function updatePaymentChart() {
+                const paymentChart = document.getElementById('paymentChart');
+                if (paymentChart) {
+                    const canvas = document.createElement('canvas');
+                    paymentChart.innerHTML = '';
+                    paymentChart.appendChild(canvas);
+                    
+                    new Chart(canvas, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                            datasets: [{
+                                label: 'Payment Amount (₹)',
+                                data: [3999, 3999, 4799, 3999, 3999, 3999],
+                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Refresh button functionality
+            const refreshBtns = document.querySelectorAll('#refreshBtn');
+            refreshBtns.forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (csvUpload && csvUpload.files.length > 0) {
+                        await processCustomerData();
+                    } else {
+                        alert("Please upload customer data first");
+                    }
+                });
+            });
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
